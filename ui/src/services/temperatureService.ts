@@ -1,4 +1,4 @@
-import { APP_CONSTANTS } from '../constants';
+import { APP_CONSTANTS } from '../constants/constants';
 import type { 
   TemperatureReading, 
   TemperatureStatus, 

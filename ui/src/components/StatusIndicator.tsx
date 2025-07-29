@@ -3,7 +3,7 @@ import { Thermometer, CheckCircle, AlertTriangle } from 'lucide-react';
 import type { TemperatureStatus } from '../types/temperature';
 
 interface StatusIndicatorProps {
-  status?: TemperatureStatus;
+  status: TemperatureStatus | null;
   className?: string;
 }
 
