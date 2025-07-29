@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from Router import tempRouter
 from fastapi.middleware.cors import CORSMiddleware
-from Utils.utils import make_response
+from Utils.utils import makeResponse
 import logging
 import uvicorn
 
@@ -20,7 +20,7 @@ app.add_middleware(
 
 @app.get("/")
 async def welcome():
-    return make_response("success", "Welcome to Temperature API")
+    return makeResponse("success", "Welcome to Temperature API")
 
 
 app.include_router(tempRouter.router)
