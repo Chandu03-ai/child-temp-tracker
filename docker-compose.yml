@@ -1,0 +1,46 @@
+services:
+
+  temp_mongodb:
+    image: mongo:6
+    container_name: temp_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: temperatureDb
+    command: mongod --auth
+    ports:
+      - "57057:27017"
+    networks:
+      - yensi_docker_network
+    volumes:
+      - ./volumes/mongo/data:/data/db
+      - ./volumes/mongo/config:/data/configdb
+
+  temp_api:
+    image: 192.168.0.108:5000/temp_api:latest
+    container_name: temp_api
+    restart: always
+    ports:
+      - "8000:8369"
+    env_file:
+      - temp.env
+    depends_on:
+      - temp_mongodb
+    networks:
+      - yensi_docker_network
+
+  temp_ui:
+    image: 192.168.0.108:5000/temp_ui:latest
+    container_name: temp_ui
+    restart: always
+    ports:
+      - "5173:4173"
+    networks:
+      - yensi_docker_network
+    depends_on:
+      - temp_api
+
+networks:
+  yensi_docker_network:
+    external: true
