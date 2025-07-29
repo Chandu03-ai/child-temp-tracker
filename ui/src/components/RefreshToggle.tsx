@@ -49,8 +49,8 @@ export const RefreshToggle: React.FC<RefreshToggleProps> = ({
       </button>
       
       {lastRefresh && (
-        <div className="text-sm text-gray-500 hidden md:block">
-          Last: {new Date(lastRefresh).toLocaleTimeString()}
+        <div className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-pink-500 text-white rounded-lg font-mono text-lg shadow-lg animate-pulse">
+         {new Date(lastRefresh).toLocaleTimeString()}
         </div>
       )}
     </div>

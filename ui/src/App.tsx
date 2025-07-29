@@ -1,7 +1,7 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { MonitorPage } from './pages/MonitorPage';
-import { APP_CONSTANTS } from './constants';
+import { APP_CONSTANTS } from './constants/constants';
+import { ToastContainer } from 'react-toastify';
 
 function App() {
   return (
@@ -17,7 +17,9 @@ function App() {
           element={<Navigate to={`/monitor/${APP_CONSTANTS.DEFAULT_DEVICE_ID}`} replace />} 
         />
       </Routes>
+      <ToastContainer />
     </Router>
+    
   );
 }
 
