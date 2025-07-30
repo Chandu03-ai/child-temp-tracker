@@ -3,10 +3,12 @@ export interface TemperatureReading {
   deviceId: string;
   temperature: number;
   timestamp: string;
-  unit: 'celsius' | 'fahrenheit';
+  unit:'fahrenheit';
 }
 
 export interface TemperatureStatus {
+  temperature: any;
+  timestamp: string | number | Date;
   deviceId: string;
   status: 'normal' | 'fever' | 'unknown';
   currentTemperature: number;
@@ -17,7 +19,7 @@ export interface TemperatureStatus {
 export interface TemperatureThreshold {
   deviceId: string;
   threshold: number;
-  unit: 'celsius' | 'fahrenheit';
+  unit:  'fahrenheit';
   updatedAt: string;
 }
 

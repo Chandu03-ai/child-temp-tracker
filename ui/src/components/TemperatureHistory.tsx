@@ -20,12 +20,19 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
 }) => {
   // Sort readings (latest first)
   const sortedReadings = useMemo(
-    () => [...readings].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+    () =>
+      [...readings].sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      ),
     [readings]
   );
 
+  // Limit to last 10 readings
+  const limitedReadings = sortedReadings.slice(0, 10);
+
   // Group readings by Year -> Month -> Day -> Hour
-  const groupedReadings = sortedReadings.reduce((acc, reading) => {
+  const groupedReadings = limitedReadings.reduce((acc, reading) => {
     const date = new Date(reading.timestamp);
     const year = date.getFullYear();
     const month = date.toLocaleString('default', { month: 'long' });
@@ -58,7 +65,9 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
       {/* Header */}
       <div className="flex items-center space-x-2 mb-5">
         <Clock className="w-6 h-6 text-blue-500" />
-        <h2 className="text-xl font-bold text-gray-900">Recent Temperature Readings</h2>
+        <h2 className="text-xl font-bold text-gray-900">
+          Recent Temperature Readings (Last {limitedReadings.length})
+        </h2>
       </div>
 
       {readings.length === 0 ? (
@@ -71,7 +80,7 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
           {Object.entries(groupedReadings).map(([key, group]) => (
             <div
               key={key}
-              className="rounded-xl border border-gray-200 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 shadow-sm hover:shadow-md transition-all"
+              className="rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
             >
               {/* Dropdown Toggle Button */}
               <button
@@ -84,7 +93,9 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
                 </div>
                 <div className="flex items-center space-x-4">
                   {/* Latest update time */}
-                  <span className="text-sm text-gray-500">Last updated: {group.latestUpdate}</span>
+                  <span className="text-sm text-gray-500">
+                    Last updated: {group.latestUpdate}
+                  </span>
                   {openGroup === key ? (
                     <ChevronUp className="w-6 h-6 text-gray-600 transition-transform" />
                   ) : (
@@ -101,36 +112,24 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
               >
                 <div className="px-4 pb-4 pt-2 space-y-3">
                   {group.readings.map((reading) => {
-                    const isFever = reading.temperature >= threshold;
+                    const isFever = toFahrenheit(reading.temperature) >= toFahrenheit(threshold);
                     return (
                       <div
                         key={reading.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border shadow-sm ${
-                          isFever
-                            ? 'bg-red-50 border-red-200 hover:bg-red-100'
-                            : 'bg-green-50 border-green-200 hover:bg-green-100'
-                        } transition-all`}
+                        className="flex items-center justify-between p-2 border-b border-gray-200 font-mono text-sm"
                       >
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`w-3 h-3 rounded-full ${
-                              isFever ? 'bg-red-500' : 'bg-green-500'
-                            }`}
-                          />
-                          <div>
-                            <div className="text-lg font-semibold text-gray-900">
-                              {/* Celsius & Fahrenheit */}
-                              {reading.temperature.toFixed(1)}°C /{' '}
-                              {toFahrenheit(reading.temperature).toFixed(1)}°F
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {formatTime(reading.timestamp)}
-                            </div>
-                          </div>
+                        {/* Fahrenheit Only */}
+                        <div
+                          className={`font-semibold ${
+                            isFever ? 'text-red-600' : 'text-green-600'
+                          }`}
+                        >
+                          {toFahrenheit(reading.temperature).toFixed(1)}°F
                         </div>
-                        <div className="text-sm text-gray-500 font-medium">
-                          {getTimeAgo(reading.timestamp)}
-                        </div>
+                        {/* Timestamp */}
+                        <div className="text-gray-600">{formatTime(reading.timestamp)}</div>
+                        {/* Time ago */}
+                        <div className="text-gray-400">{getTimeAgo(reading.timestamp)}</div>
                       </div>
                     );
                   })}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Thermometer, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { temperatureService } from '../services/temperatureService';
 import { StatusIndicator } from '../components/StatusIndicator';
 import { TemperatureHistory } from '../components/TemperatureHistory';
@@ -8,19 +8,21 @@ import { ThresholdManager } from '../components/ThresholdManager';
 import { AlertHistory } from '../components/AlertHistory';
 import { RefreshToggle } from '../components/RefreshToggle';
 import { APP_CONSTANTS } from '../constants/constants';
+import ChildTempImg from '../assets/ChildTempLogo.png';
 import type { 
   TemperatureReading, 
   TemperatureStatus, 
   TemperatureThreshold, 
   FeverAlert 
 } from '../types/temperature';
+import { MiniGraph } from '../components/MiniGraph';
 
 export const MonitorPage: React.FC = () => {
   const { deviceId: urlDeviceId } = useParams<{ deviceId: string }>();
   const navigate = useNavigate();
 
   // State
-  const [backendDeviceId, setBackendDeviceId] = useState<string>(''); // backend deviceId
+  const [backendDeviceId, setBackendDeviceId] = useState<string>('');
   const [status, setStatus] = useState<TemperatureStatus | null>(null);
   const [history, setHistory] = useState<TemperatureReading[]>([]);
   const [threshold, setThreshold] = useState<TemperatureThreshold | null>(null);
@@ -51,8 +53,7 @@ export const MonitorPage: React.FC = () => {
         temperatureService.getFeverAlerts(urlDeviceId),
       ]);
 
-      // Update states with backend data
-      setBackendDeviceId(statusData.deviceId); // take backend deviceId
+      setBackendDeviceId(statusData.deviceId);
       setStatus(statusData);
       setHistory(historyData);
       setThreshold(thresholdData);
@@ -73,7 +74,7 @@ export const MonitorPage: React.FC = () => {
     await fetchData();
   }, [backendDeviceId, fetchData]);
 
-  /** Auto refresh feature */
+  /** Auto refresh */
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAutoRefresh) {
@@ -92,10 +93,12 @@ export const MonitorPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 animate-fadeIn">
         <div className="text-center">
-          <Thermometer className="w-14 h-14 mx-auto mb-4 text-pink-500 animate-bounce" />
-          <p className="text-lg font-semibold text-gray-700">
-            Fetching child’s temperature data...
-          </p>
+          <img
+            src={ChildTempImg}
+            alt="Loading"
+            className="w-16 h-16 mx-auto mb-4 animate-bounce"
+          />
+          <p className="text-gray-700 font-semibold">Loading data...</p>
         </div>
       </div>
     );
@@ -105,7 +108,7 @@ export const MonitorPage: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-100 to-orange-100 animate-fadeIn">
-        <div className="text-center p-6 bg-white rounded-2xl shadow-lg animate-zoomIn">
+        <div className="text-center p-6 bg-white rounded-2xl shadow-xl animate-zoomIn">
           <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">Connection Error</h2>
           <p className="text-gray-600 mb-4">{error}</p>
@@ -123,64 +126,93 @@ export const MonitorPage: React.FC = () => {
   /** Main Screen */
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 relative overflow-hidden">
+      
       {/* Header */}
-      <header className="bg-white bg-opacity-90 backdrop-blur-md shadow-md border-b rounded-b-3xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4 space-y-3 md:space-y-0">
-            <div className="flex items-center space-x-3 text-center md:text-left">
-              <Thermometer className="w-10 h-10 text-pink-500 animate-pulse flex-shrink-0" />
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
-                  Child Temperature Monitor
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Device: <span className="font-semibold">{backendDeviceId}</span>
-                </p>   
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between md:space-x-6 w-full md:w-auto">
-              <RefreshToggle
-                isAutoRefresh={isAutoRefresh}
-                onToggle={() => setIsAutoRefresh(!isAutoRefresh)}
-                onManualRefresh={() => fetchData()}
-                isRefreshing={isRefreshing}
-                lastRefresh={lastRefresh}
+      <header className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-xl rounded-b-3xl">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <img
+                src={ChildTempImg}
+                alt="Child Logo"
+                className="w-16 h-16 rounded-full text-white border-4 border-white shadow-lg"
+              />
+              <span
+                className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-white ${
+                  (status && (status.temperature >= (threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT)))
+                    ? 'bg-red-500 animate-pulse'
+                    : 'bg-green-500'
+                }`}
               />
             </div>
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">
+                Child Temperature Monitor
+              </h1>
+              <p className="text-sm opacity-90">
+                Device: <span className="font-semibold">{backendDeviceId}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 md:mt-0 flex items-center space-x-4">
+            <div className="text-sm">
+              {(status && (status.temperature >= (threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT))) ? (
+                <span className="text-red-200 font-semibold">
+                  🔴 High Temp: {status.temperature}°F at{" "}
+                  {new Date(status.timestamp).toLocaleTimeString()}
+                </span>
+              ) : (
+                <span className="text-green-100 font-semibold">🟢 All Normal</span>
+              )}
+            </div>
+            <RefreshToggle
+              isAutoRefresh={isAutoRefresh}
+              onToggle={() => setIsAutoRefresh(!isAutoRefresh)}
+              onManualRefresh={() => fetchData()}
+              isRefreshing={isRefreshing}
+              lastRefresh={lastRefresh}
+            />
           </div>
         </div>
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fadeIn">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Status Indicator */}
-          <div className="lg:col-span-2 animate-zoomIn">
-            <StatusIndicator status={status} />
-          </div>
-
-          {/* Threshold Manager */}
-          <div className="animate-zoomIn delay-200">
-            {threshold && (
-              <ThresholdManager
-                threshold={threshold}
-                onUpdate={handleUpdateThreshold}
+          
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white rounded-2xl shadow-md p-6 hover:scale-[1.02] transition-all animate-fadeIn">
+              <StatusIndicator status={status} />
+            </div>
+            <div className=" transition-all animate-fadeIn delay-200">
+              <TemperatureHistory
+                readings={history}
+                threshold={threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT}
               />
-            )}
+            </div>
           </div>
 
-          {/* Temperature History */}
-          <div className="lg:col-span-2 animate-zoomIn delay-300">
-            <TemperatureHistory 
-              readings={history}
-              threshold={threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT}
-            />
-          </div>
-
-          {/* Alert History */}
-          <div className="animate-zoomIn delay-500">
-            <AlertHistory alerts={alerts} />
+          {/* Right Column */}
+          <div className="flex flex-col space-y-8">
+            <div className=" hover:scale-[1.02] transition-all animate-zoomIn">
+              {threshold && (
+                <ThresholdManager
+                  threshold={threshold}
+                  onUpdate={handleUpdateThreshold}
+                />
+              )}
+            </div>
+            <div className=" hover:scale-[1.02] transition-all animate-zoomIn delay-200">
+              <MiniGraph 
+                readings={history.slice(0, 10)}
+                threshold={threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT}
+              />
+            </div>
+            <div className=" hover:scale-[1.02] transition-all animate-zoomIn delay-300">
+              <AlertHistory alerts={alerts} />
+            </div>
           </div>
         </div>
       </main>
