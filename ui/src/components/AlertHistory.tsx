@@ -11,10 +11,15 @@ interface AlertHistoryProps {
 export const AlertHistory: React.FC<AlertHistoryProps> = ({ alerts }) => {
   const [selectedAlert, setSelectedAlert] = useState<FeverAlert | null>(null);
 
+  /** Convert Celsius to Fahrenheit */
+  const toFahrenheit = (celsius: number) => (celsius * 9) / 5 + 32;
+
   /** Show Toastify message when alert is critical */
   const showToast = (alert: FeverAlert) => {
     toast.error(
-      `🔥 Critical Fever Alert! Temp: ${alert.temperature.toFixed(1)}°C (Threshold: ${alert.threshold.toFixed(1)}°C)`,
+      `🔥 Critical Fever Alert! Temp: ${toFahrenheit(alert.temperature).toFixed(
+        1
+      )}°F (Threshold: ${toFahrenheit(alert.threshold).toFixed(1)}°F)`,
       {
         position: 'top-center',
         autoClose: 5000,
@@ -77,13 +82,13 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ alerts }) => {
                     <div>
                       Temperature:{' '}
                       <span className="font-bold">
-                        {alert.temperature.toFixed(1)}°C
+                        {toFahrenheit(alert.temperature).toFixed(1)}°F
                       </span>
                     </div>
                     <div>
                       Threshold:{' '}
                       <span className="font-medium">
-                        {alert.threshold.toFixed(1)}°C
+                        {toFahrenheit(alert.threshold).toFixed(1)}°F
                       </span>
                     </div>
                     <div>
@@ -127,9 +132,9 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ alerts }) => {
             <p className="text-gray-800 mb-4">
               Temperature reached{' '}
               <span className="font-bold">
-                {selectedAlert.temperature.toFixed(1)}°C
+                {toFahrenheit(selectedAlert.temperature).toFixed(1)}°F
               </span>{' '}
-              (Threshold: {selectedAlert.threshold.toFixed(1)}°C).
+              (Threshold: {toFahrenheit(selectedAlert.threshold).toFixed(1)}°F).
             </p>
             <p className="text-gray-600 text-sm">
               Started: {formatDateTime(selectedAlert.timestamp)}
