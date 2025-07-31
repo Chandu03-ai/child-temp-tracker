@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { APP_CONSTANTS } from '../constants/constants';
+import { serviceBaseUrl } from '../constants/appConstant';
 import type { 
   TemperatureReading, 
   TemperatureStatus, 
@@ -8,12 +8,11 @@ import type {
   ApiResponse 
 } from '../types/temperature';
 
-const API = APP_CONSTANTS.API_BASE_URL;
 
 export const temperatureService = {
   async getLatestTemperature(deviceId: string): Promise<TemperatureReading> {
     const { data } = await axios.get<ApiResponse<TemperatureReading>>(
-      `${API}/temperature/latest`,
+      `${serviceBaseUrl}/temperature/latest`,
       { params: { deviceId } }
     );
 
@@ -25,7 +24,7 @@ export const temperatureService = {
 
   async getTemperatureHistory(deviceId: string, limit = 10): Promise<TemperatureReading[]> {
     const { data } = await axios.get<ApiResponse<TemperatureReading[]>>(
-      `${API}/temperature/history`,
+      `${serviceBaseUrl}/temperature/history`,
       { params: { deviceId, limit } }
     );
 
@@ -37,7 +36,7 @@ export const temperatureService = {
 
   async getTemperatureStatus(deviceId: string): Promise<TemperatureStatus> {
     const { data } = await axios.get<ApiResponse<TemperatureStatus>>(
-      `${API}/temperature/status`,
+      `${serviceBaseUrl}/temperature/status`,
       { params: { deviceId } }
     );
 
@@ -49,7 +48,7 @@ export const temperatureService = {
 
   async getThreshold(deviceId: string): Promise<TemperatureThreshold> {
     const { data } = await axios.get<ApiResponse<TemperatureThreshold>>(
-      `${API}/temperature/threshold`,
+      `${serviceBaseUrl}/temperature/threshold`,
       { params: { deviceId } }
     );
 
@@ -61,7 +60,7 @@ export const temperatureService = {
 
   async updateThreshold(deviceId: string, threshold: number): Promise<TemperatureThreshold> {
     const { data } = await axios.post<ApiResponse<TemperatureThreshold>>(
-      `${API}/temperature/threshold`,
+      `${serviceBaseUrl}/temperature/threshold`,
       { deviceId, threshold }
     );
 
@@ -73,7 +72,7 @@ export const temperatureService = {
 
   async getFeverAlerts(deviceId: string): Promise<FeverAlert[]> {
     const { data } = await axios.get<ApiResponse<FeverAlert[]>>(
-      `${API}/temperature/alerts`,
+      `${serviceBaseUrl}/temperature/alerts`,
       { params: { deviceId } }
     );
 

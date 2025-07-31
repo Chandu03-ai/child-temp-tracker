@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
       allowedHosts: ['tempui.aiyensi.com'],
       proxy: {
         '/api': {
-          target: env.VITE_API_BASE_URL || 'http://192.168.0.107:8001',
+          target: env.VITE_API_BASE_URL,
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api/, ''),
         },

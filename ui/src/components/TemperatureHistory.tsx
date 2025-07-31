@@ -18,7 +18,6 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
   readings,
   threshold
 }) => {
-  // Sort readings (latest first)
   const sortedReadings = useMemo(
     () =>
       [...readings].sort(
@@ -28,10 +27,8 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
     [readings]
   );
 
-  // Limit to last 10 readings
   const limitedReadings = sortedReadings.slice(0, 10);
 
-  // Group readings by Year -> Month -> Day -> Hour
   const groupedReadings = limitedReadings.reduce((acc, reading) => {
     const date = new Date(reading.timestamp);
     const year = date.getFullYear();
@@ -57,7 +54,6 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
     setOpenGroup(openGroup === key ? null : key);
   };
 
-  // Celsius to Fahrenheit conversion
   const toFahrenheit = (celsius: number) => (celsius * 9) / 5 + 32;
 
   return (
@@ -82,7 +78,7 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
               key={key}
               className="rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
             >
-              {/* Dropdown Toggle Button */}
+              {/* Dropdown Toggle */}
               <button
                 onClick={() => toggleGroup(key)}
                 className="flex items-center justify-between w-full px-4 py-3 text-left font-semibold text-gray-800"
@@ -92,7 +88,6 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
                   <span>{group.label}</span>
                 </div>
                 <div className="flex items-center space-x-4">
-                  {/* Latest update time */}
                   <span className="text-sm text-gray-500">
                     Last updated: {group.latestUpdate}
                   </span>
@@ -112,24 +107,32 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
               >
                 <div className="px-4 pb-4 pt-2 space-y-3">
                   {group.readings.map((reading) => {
-                    const isFever = toFahrenheit(reading.temperature) >= toFahrenheit(threshold);
+                    const isFever =
+                      toFahrenheit(reading.temperature) >= toFahrenheit(threshold);
                     return (
                       <div
                         key={reading.id}
                         className="flex items-center justify-between p-2 border-b border-gray-200 font-mono text-sm"
                       >
-                        {/* Fahrenheit Only */}
+                        {/* Celsius and Fahrenheit */}
                         <div
                           className={`font-semibold ${
                             isFever ? 'text-red-600' : 'text-green-600'
                           }`}
                         >
+                          {reading.temperature.toFixed(1)}°C /{' '}
                           {toFahrenheit(reading.temperature).toFixed(1)}°F
                         </div>
+
                         {/* Timestamp */}
-                        <div className="text-gray-600">{formatTime(reading.timestamp)}</div>
+                        <div className="text-gray-600">
+                          {formatTime(reading.timestamp)}
+                        </div>
+
                         {/* Time ago */}
-                        <div className="text-gray-400">{getTimeAgo(reading.timestamp)}</div>
+                        <div className="text-gray-400">
+                          {getTimeAgo(reading.timestamp)}
+                        </div>
                       </div>
                     );
                   })}
