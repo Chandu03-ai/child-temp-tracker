@@ -15,7 +15,10 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt --index-url https://pypi.org/simple --extra-index-url http://192.168.0.104:8081/repository/packageREPO/simple/ --trusted-host 192.168.0.104
+
 
 # Copy project files
 COPY . .

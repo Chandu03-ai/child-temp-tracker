@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
       exclude: ['lucide-react'],
     },
     server: {
+      allowedHosts: ['tempui.aiyensi.com'],
       proxy: {
         '/api': {
           target: env.VITE_API_BASE_URL || 'http://192.168.0.107:8001',

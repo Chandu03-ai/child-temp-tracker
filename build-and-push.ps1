@@ -1,7 +1,7 @@
 # Exit on any error
 $ErrorActionPreference = "Stop"
 
-$registry = "192.168.0.108:5000"
+$registry = "192.168.0.189:5000"
 
 # === Build API ===
 docker build -t ${registry}/temp_api:latest .\api
