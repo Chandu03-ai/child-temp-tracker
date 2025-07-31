@@ -9,6 +9,7 @@ import { AlertHistory } from '../components/AlertHistory';
 import { RefreshToggle } from '../components/RefreshToggle';
 import { APP_CONSTANTS } from '../constants/constants';
 import ChildTempImg from '../assets/ChildTempLogo.png';
+import { useAuthStore } from '../store/authStore';
 import type { 
   TemperatureReading, 
   TemperatureStatus, 
@@ -43,8 +44,7 @@ export const MonitorPage: React.FC = () => {
   const fetchData = useCallback(async (showLoading = false) => {
     if (showLoading) setIsLoading(true);
     setIsRefreshing(true);
-    setError(null);
-
+  console.log(fetchData)
     try {
       const [statusData, historyData, thresholdData, alertsData] = await Promise.all([
         temperatureService.getTemperatureStatus(urlDeviceId),
@@ -127,55 +127,66 @@ export const MonitorPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 relative overflow-hidden">
       
-      {/* Header */}
-      <header className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-xl rounded-b-3xl">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <img
-                src={ChildTempImg}
-                alt="Child Logo"
-                className="w-16 h-16 rounded-full text-white border-4 border-white shadow-lg"
-              />
-              <span
-                className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-white ${
-                  (status && (status.temperature >= (threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT)))
-                    ? 'bg-red-500 animate-pulse'
-                    : 'bg-green-500'
-                }`}
-              />
-            </div>
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight">
-                Child Temperature Monitor
-              </h1>
-              <p className="text-sm opacity-90">
-                Device: <span className="font-semibold">{backendDeviceId}</span>
-              </p>
-            </div>
-          </div>
+  <header className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white shadow-xl rounded-b-3xl">
+  <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center">
+    <div className="flex items-center space-x-4">
+      <div className="relative">
+        <img
+          src={ChildTempImg}
+          alt="Child Logo"
+          className="w-16 h-16 rounded-full text-white border-4 border-white shadow-lg"
+        />
+        <span
+          className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-white ${
+            (status && (status.temperature >= (threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT)))
+              ? 'bg-red-500 animate-pulse'
+              : 'bg-green-500'
+          }`}
+        />
+      </div>
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          Child Temperature Monitor
+        </h1>
+        <p className="text-sm opacity-90">
+          Device: <span className="font-semibold">{backendDeviceId}</span>
+        </p>
+      </div>
+    </div>
 
-          <div className="mt-4 md:mt-0 flex items-center space-x-4">
-            <div className="text-sm">
-              {(status && (status.temperature >= (threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT))) ? (
-                <span className="text-red-200 font-semibold">
-                  🔴 High Temp: {status.temperature}°F at{" "}
-                  {new Date(status.timestamp).toLocaleTimeString()}
-                </span>
-              ) : (
-                <span className="text-green-100 font-semibold">🟢 All Normal</span>
-              )}
-            </div>
-            <RefreshToggle
-              isAutoRefresh={isAutoRefresh}
-              onToggle={() => setIsAutoRefresh(!isAutoRefresh)}
-              onManualRefresh={() => fetchData()}
-              isRefreshing={isRefreshing}
-              lastRefresh={lastRefresh}
-            />
-          </div>
-        </div>
-      </header>
+    <div className="mt-4 md:mt-0 flex items-center space-x-4">
+      <div className="text-sm">
+        {(status && (status.temperature >= (threshold?.threshold ?? APP_CONSTANTS.FEVER_THRESHOLD_DEFAULT))) ? (
+          <span className="text-red-200 font-semibold">
+            🔴 High Temp: {status.temperature}°F at{" "}
+            {new Date(status.timestamp).toLocaleTimeString()}
+          </span>
+        ) : (
+          <span className="text-green-100 font-semibold">🟢 All Normal</span>
+        )}
+      </div>
+
+      <RefreshToggle
+        isAutoRefresh={isAutoRefresh}
+        onToggle={() => setIsAutoRefresh(!isAutoRefresh)}
+        onManualRefresh={() => fetchData()}
+        isRefreshing={isRefreshing}
+        lastRefresh={lastRefresh}
+      />
+
+      {/* 🔓 Logout Button */}
+      <button
+        onClick={async () => {
+          await useAuthStore.getState().logout();
+          window.location.href = '/login'; // Navigate to login
+        }}
+        className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold shadow hover:bg-gray-100 transition"
+      >
+        Logout
+      </button>
+    </div>
+  </div>
+</header>
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

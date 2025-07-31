@@ -16,11 +16,17 @@ export default {
           '0%': { backgroundPosition: '0% 0%' },
           '100%': { backgroundPosition: '100% 100%' },
         },
+        smoothPulse: {
+          '0%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.4', transform: 'scale(1.2)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
       },
       animation: {
         fadeIn: 'fadeIn 0.8s ease-in-out',
         zoomIn: 'zoomIn 0.6s ease-in-out',
         slowMove: 'slowMove 20s linear infinite',
+        pulseSmooth: 'smoothPulse 1s ease-in-out infinite',
       },
       colors: {
         softPink: '#ffe4e6',
