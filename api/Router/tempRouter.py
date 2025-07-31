@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body, Request
 from Models.models import TemperatureReading, getThresholdUpdate
 from Utils.utils import makeResponse, logger
 from Database.db import insertTemperature, getAllTemperatures, getLatestTemperature, getThreshold, updateThreshold, insertFeverAlert, getActiveAlert, resolveAlert, getFeverAlerts
@@ -10,7 +10,7 @@ router = APIRouter()
 
 # POST /temperature
 @router.post("/temperature")
-def receiveTemperature(reading: TemperatureReading):
+def receiveTemperature(request: Request, reading: TemperatureReading):
     try:
         logger.debug(f"receiveTemperature: Received data -> {reading.model_dump()}")
 
@@ -41,7 +41,7 @@ def receiveTemperature(reading: TemperatureReading):
 
 
 @router.get("/temperature/latest")
-def getLatest(deviceId: str):
+def getLatest(request: Request, deviceId: str):
     try:
         logger.debug(f"getLatest: Fetching latest temperature for deviceId: {deviceId}")
 
@@ -60,7 +60,7 @@ def getLatest(deviceId: str):
 
 
 @router.get("/temperature/history")
-def getHistory(deviceId: str, limit: int = Query(default=50)):
+def getHistory(request: Request, deviceId: str, limit: int = Query(default=50)):
     try:
         logger.debug(f"getHistory: Fetching last {limit} readings for deviceId: {deviceId}")
 
@@ -75,7 +75,7 @@ def getHistory(deviceId: str, limit: int = Query(default=50)):
 
 
 @router.get("/temperature/status")
-def getStatus(deviceId: str):
+def getStatus(request: Request, deviceId: str):
     try:
         logger.debug(f"getStatus: Checking status for deviceId: {deviceId}")
 
@@ -109,7 +109,7 @@ def getStatus(deviceId: str):
 
 
 @router.get("/temperature/threshold")
-def getDeviceThreshold(deviceId: str):
+def getDeviceThreshold(request: Request, deviceId: str):
     try:
         logger.debug(f"getDevice_threshold: Fetching threshold for deviceId: {deviceId}")
 
@@ -128,7 +128,7 @@ def getDeviceThreshold(deviceId: str):
 
 
 @router.post("/temperature/threshold")
-def updateDeviceThreshold(data: getThresholdUpdate = Body(...)):
+def updateDeviceThreshold(request: Request, data: getThresholdUpdate = Body(...)):
     try:
         logger.debug(f"updateDeviceThreshold: Received update request for deviceId: {data.deviceId} with threshold: {data.threshold}")
 
@@ -148,7 +148,7 @@ def updateDeviceThreshold(data: getThresholdUpdate = Body(...)):
 
 
 @router.get("/temperature/alerts")
-def getAlerts(deviceId: str):
+def getAlerts(request: Request, deviceId: str):
     try:
         logger.debug(f"getAlerts: Fetching fever alerts for deviceId: {deviceId}")
 

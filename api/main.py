@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from Utils.utils import makeResponse
 import logging
 import uvicorn
+from yensiAuthentication import yensiloginRouter, yensiSsoRouter
+from yensiAuthentication.authenticate import KeycloakMiddleware
 
 app = FastAPI()
 
@@ -18,11 +20,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def welcome():
     return makeResponse("success", "Welcome to Temperature API")
 
-
+app.add_middleware(KeycloakMiddleware)
+app.include_router(yensiloginRouter)
+app.include_router(yensiSsoRouter)
 app.include_router(tempRouter.router)
 
 if __name__ == "__main__":
