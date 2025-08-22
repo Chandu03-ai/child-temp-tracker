@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query, Body, Request
 from Models.models import TemperatureReading, getThresholdUpdate
 from Utils.utils import makeResponse, logger
 from Database.db import insertTemperature, getAllTemperatures, getLatestTemperature, getThreshold, updateThreshold, insertFeverAlert, getActiveAlert, resolveAlert, getFeverAlerts
-
+from yensiDatetime.yensiDatetime import formatDateTime, formatTimeDelta
 
 router = APIRouter()
 
@@ -16,7 +16,7 @@ def receiveTemperature(request: Request, reading: TemperatureReading):
 
         insertTemperature(reading.model_dump())
         logger.debug(f"Inserted temperature reading for deviceId: {reading.deviceId}")
-
+        print(reading.model_dump())
         threshold_doc = getThreshold(reading.deviceId)
         threshold = threshold_doc["threshold"] if threshold_doc else 38.0
         logger.debug(f"Threshold for deviceId {reading.deviceId} is {threshold}")
@@ -25,12 +25,14 @@ def receiveTemperature(request: Request, reading: TemperatureReading):
             logger.debug(f"Temperature {reading.temperature} exceeds threshold {threshold}")
             active_alert = getActiveAlert(reading.deviceId)
             if not active_alert:
-                insertFeverAlert(reading.deviceId, reading.temperature, threshold)
+                doc = {"deviceId": reading.deviceId, "temperature": reading.temperature, "threshold": threshold, "timestamp": reading.timestamp, "resolved": False, "resolvedAt": None}
+                insertFeverAlert(doc)
                 logger.info(f"Fever alert inserted for deviceId: {reading.deviceId}")
         else:
             alert = getActiveAlert(reading.deviceId)
             if alert:
-                resolveAlert(alert["_id"])
+                query = {"resolved": True, "resolvedAt": formatDateTime()}
+                resolveAlert(alert["_id"], query)
                 logger.info(f"Resolved alert for deviceId: {reading.deviceId}")
 
         logger.debug(f"Temperature processed successfully for deviceId: {reading.deviceId}")
@@ -86,6 +88,17 @@ def getStatus(request: Request, deviceId: str):
 
         now = datetime.now(timezone.utc)
         ts = latest["timestamp"]
+
+        # ✅ Convert string to datetime if needed
+        if isinstance(ts, str):
+            try:
+                # assuming your format: 20250711144630457
+                ts = datetime.strptime(ts, "%Y%m%d%H%M%S%f")
+            except ValueError:
+                # fallback: try ISO format
+                ts = datetime.fromisoformat(ts)
+
+        # ✅ Ensure tz-aware
         if ts.tzinfo is None:
             ts = ts.replace(tzinfo=timezone.utc)
 
@@ -99,13 +112,14 @@ def getStatus(request: Request, deviceId: str):
         status = "fever" if latest["temperature"] >= threshold else "normal"
         final_status = status if recent else "unknown"
 
-        result = {"deviceId": deviceId, "status": final_status, "currentTemperature": latest["temperature"], "threshold": threshold, "lastUpdated": latest["timestamp"]}
+        result = {"deviceId": deviceId, "status": final_status, "currentTemperature": latest["temperature"], "threshold": threshold, "lastUpdated": formatTimeDelta(ts)}  # ✅ formatted timestamp
 
         logger.debug(f"Status result for deviceId {deviceId}: {result}")
         return makeResponse("success", result)
+
     except Exception as e:
-        logger.error(f"Error determining temperature status for deviceId: {deviceId},Error:{e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to get status")
+        logger.error(f"Error determining temperature status for deviceId: {deviceId}, Error: {e}", exc_info=True)
+        return makeResponse("error", {"message": str(e)})
 
 
 @router.get("/temperature/threshold")
@@ -130,20 +144,20 @@ def getDeviceThreshold(request: Request, deviceId: str):
 @router.post("/temperature/threshold")
 def updateDeviceThreshold(request: Request, data: getThresholdUpdate = Body(...)):
     try:
-        logger.debug(f"updateDeviceThreshold: Received update request for deviceId: {data.deviceId} with threshold: {data.threshold}")
-
-        updated = updateThreshold(data.deviceId, data.threshold)
+        deviceId = data.deviceId
+        logger.debug(f"updateDeviceThreshold: Received update request for deviceId: {deviceId} with threshold: {data.threshold}")
+        updatedData = {"threshold": data.threshold, "unit": "celsius", "updatedAt": formatDateTime()}
+        updated = updateThreshold(deviceId, updatedData)
         if not updated:
-            logger.warning(f"Device not found while updating threshold for deviceId: {data.deviceId}")
+            logger.warning(f"Device not found while updating threshold for deviceId: {deviceId}")
             raise HTTPException(status_code=404, detail="Device not found")
 
-        updated["id"] = str(updated.pop("_id"))
-        logger.info(f"Threshold updated successfully for deviceId: {data.deviceId}")
+        logger.info(f"Threshold updated successfully for deviceId: {deviceId}")
         logger.debug(f"Updated document: {updated}")
 
         return makeResponse("success", updated)
     except Exception as e:
-        logger.error(f"Error updating threshold for deviceId: {data.deviceId},Error:{e}", exc_info=True)
+        logger.error(f"Error updating threshold for deviceId: {deviceId},Error:{e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to update threshold")
 
 
