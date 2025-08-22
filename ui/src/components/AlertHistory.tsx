@@ -15,7 +15,9 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ alerts }) => {
 
   const showToast = (alert: FeverAlert) => {
     toast.error(
-      `🔥 Critical Fever Alert! Temp: ${toFahrenheit(alert.temperature).toFixed(1)}°F (Threshold: ${toFahrenheit(alert.threshold).toFixed(1)}°F)`,
+      `🔥 Critical Fever Alert! Temp: ${toFahrenheit(alert.temperature).toFixed(
+        1
+      )}°F (Threshold: ${toFahrenheit(alert.threshold).toFixed(1)}°F)`,
       {
         position: 'top-center',
         autoClose: 5000,
@@ -28,6 +30,11 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ alerts }) => {
     );
   };
 
+  // Sort alerts by timestamp (latest first) and take only top 4
+  const latestAlerts = [...alerts]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 4);
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
       <div className="flex items-center space-x-2 mb-6">
@@ -35,14 +42,14 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ alerts }) => {
         <h2 className="text-2xl font-bold text-gray-900">Alert History</h2>
       </div>
 
-      {alerts.length === 0 ? (
+      {latestAlerts.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <CheckCircle className="w-14 h-14 mx-auto mb-4 text-green-300" />
           <p className="text-lg">No fever alerts recorded</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {alerts.map((alert) => (
+          {latestAlerts.map((alert) => (
             <div
               key={alert.id}
               onClick={() => {
@@ -84,17 +91,31 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ alerts }) => {
                   <div className="text-sm text-gray-700 space-y-1 pl-1">
                     <div>
                       <Info className="inline w-4 h-4 text-gray-500 mr-1" />
-                      Temperature: <span className="font-bold">{alert.temperature.toFixed(1)}°C / {toFahrenheit(alert.temperature).toFixed(1)}°F</span>
+                      Temperature:{' '}
+                      <span className="font-bold">
+                        {alert.temperature.toFixed(1)}°C /{' '}
+                        {toFahrenheit(alert.temperature).toFixed(1)}°F
+                      </span>
                     </div>
                     <div>
-                      Threshold: <span className="font-medium">{alert.threshold.toFixed(1)}°C / {toFahrenheit(alert.threshold).toFixed(1)}°F</span>
+                      Threshold:{' '}
+                      <span className="font-medium">
+                        {alert.threshold.toFixed(1)}°C /{' '}
+                        {toFahrenheit(alert.threshold).toFixed(1)}°F
+                      </span>
                     </div>
                     <div>
-                      Started: <span className="font-medium">{formatDateTime(alert.timestamp)}</span>
+                      Started:{' '}
+                      <span className="font-medium">
+                        {formatDateTime(alert.timestamp)}
+                      </span>
                     </div>
                     {alert.resolved && alert.resolvedAt && (
                       <div>
-                        Resolved: <span className="font-medium">{formatDateTime(alert.resolvedAt)}</span>
+                        Resolved:{' '}
+                        <span className="font-medium">
+                          {formatDateTime(alert.resolvedAt)}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -125,7 +146,8 @@ export const AlertHistory: React.FC<AlertHistoryProps> = ({ alerts }) => {
               <span className="font-bold">
                 {toFahrenheit(selectedAlert.temperature).toFixed(1)}°F
               </span>{' '}
-              (Threshold: {toFahrenheit(selectedAlert.threshold).toFixed(1)}°F).
+              (Threshold:{' '}
+              {toFahrenheit(selectedAlert.threshold).toFixed(1)}°F).
             </p>
             <p className="text-gray-600 text-sm">
               Started: {formatDateTime(selectedAlert.timestamp)}

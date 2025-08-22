@@ -63,7 +63,7 @@ export const temperatureService = {
       `${serviceBaseUrl}/temperature/threshold`,
       { deviceId, threshold }
     );
-
+  console.log(`Updating threshold for device ${deviceId} to ${threshold}`);
     if (data.status !== 'success') {
       throw new Error('API returned error status');
     }

@@ -1,44 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, X, AlertCircle } from 'lucide-react';
+import { Settings, Save, X, AlertCircle, Thermometer } from 'lucide-react';
 import type { TemperatureThreshold } from '../types/temperature';
 
 interface ThresholdManagerProps {
   threshold: TemperatureThreshold;
   onUpdate: (threshold: number) => Promise<void>;
   disabled?: boolean;
-  currentTempF?: number;
 }
 
 export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
   threshold,
   onUpdate,
   disabled = false,
-  currentTempF = 98.6,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [unit, setUnit] = useState<'F' | 'C'>('F'); // Toggle unit
+  const [unit, setUnit] = useState<'F' | 'C'>('F');
+  const [error, setError] = useState<string>('');
+
+  // Convert Celsius to Fahrenheit
+  const toFahrenheit = (celsius: number) => (celsius * 9) / 5 + 32;
+
+  // Convert Fahrenheit to Celsius
+  const toCelsius = (fahrenheit: number) => ((fahrenheit - 32) * 5) / 9;
 
   useEffect(() => {
-    const value =
-      unit === 'F'
-        ? ((threshold.threshold * 9) / 5 + 32).toFixed(1)
-        : threshold.threshold.toFixed(1);
-    setEditValue(value);
-  }, [threshold, unit]);
+    if (!isEditing) {
+      const value =
+        unit === 'F'
+          ? toFahrenheit(threshold.threshold).toFixed(1)
+          : threshold.threshold.toFixed(1);
+      setEditValue(value);
+    }
+    setError('');
+  }, [threshold, unit, isEditing]);
+
+  const handleEditStart = () => {
+    setIsEditing(true);
+    setError('');
+    // Keep input blank while editing
+    setEditValue('');
+  };
 
   const handleSave = async () => {
+    setError('');
     const val = parseFloat(editValue);
+
     if (isNaN(val)) {
-      alert('Please enter a valid number');
+      setError('Please enter a valid number');
       return;
     }
 
-    let valueInC = unit === 'F' ? ((val - 32) * 5) / 9 : val;
+    let valueInC = unit === 'F' ? toCelsius(val) : val;
 
     if (valueInC < 35 || valueInC > 50) {
-      alert('Please enter a valid threshold (between 95°F–122°F or 35°C–50°C)');
+      setError(
+        `Please enter a valid threshold (between ${
+          unit === 'F' ? '95°F–122°F' : '35°C–50°C'
+        })`
+      );
       return;
     }
 
@@ -46,24 +67,26 @@ export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
     try {
       await onUpdate(valueInC);
       setIsEditing(false);
+      setError('');
     } catch (err) {
-      alert('Failed to update. Try again.');
+      setError('Failed to update threshold. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
+    setIsEditing(false);
+    setError('');
     const value =
       unit === 'F'
-        ? ((threshold.threshold * 9) / 5 + 32).toFixed(1)
+        ? toFahrenheit(threshold.threshold).toFixed(1)
         : threshold.threshold.toFixed(1);
     setEditValue(value);
-    setIsEditing(false);
   };
 
-  const displayTemp = unit === 'F' ? currentTempF : ((currentTempF - 32) * 5) / 9;
-  const isFever = currentTempF > (threshold.threshold * 9) / 5 + 32;
+  const displayThreshold =
+    unit === 'F' ? toFahrenheit(threshold.threshold) : threshold.threshold;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
@@ -78,7 +101,7 @@ export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
 
         {!disabled && !isEditing && (
           <button
-            onClick={() => setIsEditing(true)}
+            onClick={handleEditStart}
             className="px-4 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
           >
             Edit
@@ -96,6 +119,7 @@ export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
               : 'bg-gray-100 text-gray-800'
           }`}
           onClick={() => setUnit('C')}
+          disabled={isEditing}
         >
           °C
         </button>
@@ -106,6 +130,7 @@ export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
               : 'bg-gray-100 text-gray-800'
           }`}
           onClick={() => setUnit('F')}
+          disabled={isEditing}
         >
           °F
         </button>
@@ -123,12 +148,27 @@ export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
               step="0.1"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                error
+                  ? 'border-red-300 focus:ring-red-500'
+                  : 'border-gray-300 focus:ring-blue-500'
+              }`}
               disabled={isLoading}
+              placeholder={`Current: ${
+                unit === 'F'
+                  ? toFahrenheit(threshold.threshold).toFixed(1)
+                  : threshold.threshold.toFixed(1)
+              }°${unit}`}
             />
             <p className="text-sm text-gray-500 mt-1">
               Range: {unit === 'F' ? '95°F – 122°F' : '35°C – 50°C'}
             </p>
+            {error && (
+              <p className="text-sm text-red-600 mt-1 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {error}
+              </p>
+            )}
           </div>
 
           <div className="flex space-x-2">
@@ -151,24 +191,26 @@ export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
           </div>
         </div>
       ) : (
-        <div className="space-y-3 text-center animate-zoomIn">
-          <div
-            className={`text-5xl font-extrabold ${
-              isFever ? 'text-red-600' : 'text-gray-900'
-            } flex items-center justify-center space-x-2`}
-          >
-            {isFever && <AlertCircle className="w-7 h-7 text-red-600" />}
-            <span>{displayTemp.toFixed(1)}°{unit}</span>
+        <div className="space-y-4 text-center animate-zoomIn">
+          {/* Current Threshold Display */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+            <div className="text-sm text-gray-600 mb-2">Current Threshold</div>
+            <div className="text-4xl font-bold text-blue-600 flex items-center justify-center space-x-2">
+              <Thermometer className="w-8 h-8" />
+              <span>
+                {displayThreshold.toFixed(1)}°{unit}
+              </span>
+            </div>
+            <div className="text-sm text-gray-500 mt-2">
+              {unit === 'F'
+                ? `${threshold.threshold.toFixed(1)}°C`
+                : `${toFahrenheit(threshold.threshold).toFixed(1)}°F`}
+            </div>
           </div>
 
-          {isFever && (
-            <div className="text-red-600 font-semibold text-lg">
-              ⚠️ Fever Detected
-            </div>
-          )}
-
-          <div className="text-sm text-gray-600">
-            🕒 {new Date().toLocaleTimeString()}
+          {/* Last Updated */}
+          <div className="text-sm text-gray-500">
+            Last updated: {new Date(threshold.updatedAt).toLocaleString()}
           </div>
         </div>
       )}

@@ -27,9 +27,13 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
     [readings]
   );
 
-  const limitedReadings = sortedReadings.slice(0, 10);
+  const [showAll, setShowAll] = useState(false);
 
-  const groupedReadings = limitedReadings.reduce((acc, reading) => {
+  const displayedReadings = showAll
+    ? sortedReadings
+    : sortedReadings.slice(0, 10);
+
+  const groupedReadings = displayedReadings.reduce((acc, reading) => {
     const date = new Date(reading.timestamp);
     const year = date.getFullYear();
     const month = date.toLocaleString('default', { month: 'long' });
@@ -62,7 +66,9 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
       <div className="flex items-center space-x-2 mb-5">
         <Clock className="w-6 h-6 text-blue-500" />
         <h2 className="text-xl font-bold text-gray-900">
-          Recent Temperature Readings (Last {limitedReadings.length})
+          Recent Temperature Readings (
+          {displayedReadings.length}
+          {showAll ? '' : ` of ${sortedReadings.length}`})
         </h2>
       </div>
 
@@ -72,75 +78,92 @@ export const TemperatureHistory: React.FC<TemperatureHistoryProps> = ({
           <p className="text-base">No temperature readings available</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {Object.entries(groupedReadings).map(([key, group]) => (
-            <div
-              key={key}
-              className="rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
-            >
-              {/* Dropdown Toggle */}
-              <button
-                onClick={() => toggleGroup(key)}
-                className="flex items-center justify-between w-full px-4 py-3 text-left font-semibold text-gray-800"
-              >
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-pink-500" />
-                  <span>{group.label}</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-500">
-                    Last updated: {group.latestUpdate}
-                  </span>
-                  {openGroup === key ? (
-                    <ChevronUp className="w-6 h-6 text-gray-600 transition-transform" />
-                  ) : (
-                    <ChevronDown className="w-6 h-6 text-gray-600 transition-transform" />
-                  )}
-                </div>
-              </button>
-
-              {/* Dropdown Content */}
+        <>
+          <div className="space-y-4">
+            {Object.entries(groupedReadings).map(([key, group]) => (
               <div
-                className={`transition-all duration-300 overflow-hidden ${
-                  openGroup === key ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
-                }`}
+                key={key}
+                className="rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
               >
-                <div className="px-4 pb-4 pt-2 space-y-3">
-                  {group.readings.map((reading) => {
-                    const isFever =
-                      toFahrenheit(reading.temperature) >= toFahrenheit(threshold);
-                    return (
-                      <div
-                        key={reading.id}
-                        className="flex items-center justify-between p-2 border-b border-gray-200 font-mono text-sm"
-                      >
-                        {/* Celsius and Fahrenheit */}
+                {/* Dropdown Toggle */}
+                <button
+                  onClick={() => toggleGroup(key)}
+                  className="flex items-center justify-between w-full px-4 py-3 text-left font-semibold text-gray-800"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-5 h-5 text-pink-500" />
+                    <span>{group.label}</span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-500">
+                      Last updated: {group.latestUpdate}
+                    </span>
+                    {openGroup === key ? (
+                      <ChevronUp className="w-6 h-6 text-gray-600 transition-transform" />
+                    ) : (
+                      <ChevronDown className="w-6 h-6 text-gray-600 transition-transform" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Dropdown Content */}
+                <div
+                  className={`transition-all duration-300 overflow-hidden ${
+                    openGroup === key
+                      ? 'max-h-[1000px] opacity-100'
+                      : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="px-4 pb-4 pt-2 space-y-3">
+                    {group.readings.map((reading) => {
+                      const isFever =
+                        toFahrenheit(reading.temperature) >=
+                        toFahrenheit(threshold);
+                      return (
                         <div
-                          className={`font-semibold ${
-                            isFever ? 'text-red-600' : 'text-green-600'
-                          }`}
+                          key={reading.id}
+                          className="flex items-center justify-between p-2 border-b border-gray-200 font-mono text-sm"
                         >
-                          {reading.temperature.toFixed(1)}°C /{' '}
-                          {toFahrenheit(reading.temperature).toFixed(1)}°F
-                        </div>
+                          {/* Celsius and Fahrenheit */}
+                          <div
+                            className={`font-semibold ${
+                              isFever ? 'text-red-600' : 'text-green-600'
+                            }`}
+                          >
+                            {reading.temperature.toFixed(1)}°C /{' '}
+                            {toFahrenheit(reading.temperature).toFixed(1)}°F
+                          </div>
 
-                        {/* Timestamp */}
-                        <div className="text-gray-600">
-                          {formatTime(reading.timestamp)}
-                        </div>
+                          {/* Timestamp */}
+                          <div className="text-gray-600">
+                            {formatTime(reading.timestamp)}
+                          </div>
 
-                        {/* Time ago */}
-                        <div className="text-gray-400">
-                          {getTimeAgo(reading.timestamp)}
+                          {/* Time ago */}
+                          <div className="text-gray-400">
+                            {getTimeAgo(reading.timestamp)}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* Show More / Show Less Button */}
+          {sortedReadings.length > 10 && (
+            <div className="text-center mt-6">
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+              >
+                {showAll ? 'Show Less' : 'Show More'}
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
