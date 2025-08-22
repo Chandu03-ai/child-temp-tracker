@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, X, AlertCircle, Thermometer } from 'lucide-react';
 import type { TemperatureThreshold } from '../types/temperature';
-
+import {formatDateTime} from '../utils/dateUtils';
 interface ThresholdManagerProps {
   threshold: TemperatureThreshold;
   onUpdate: (threshold: number) => Promise<void>;
   disabled?: boolean;
+  
 }
 
 export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
@@ -208,10 +209,10 @@ export const ThresholdManager: React.FC<ThresholdManagerProps> = ({
             </div>
           </div>
 
-          {/* Last Updated */}
           <div className="text-sm text-gray-500">
-            Last updated: {new Date(threshold.updatedAt).toLocaleString()}
-          </div>
+  Last updated: {threshold.updatedAt ? formatDateTime(threshold.updatedAt) : "Not updated yet"}
+</div>
+
         </div>
       )}
     </div>
