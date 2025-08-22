@@ -30,7 +30,11 @@ def getLatestTemperature(deviceId: str):
 
 # Thresholds
 def insertThreshold(deviceId: str, threshold: float):
-    doc = {"deviceId": deviceId, "threshold": threshold, "unit": "celsius", "updatedAt": datetime.now(timezone.utc)}
+    doc = {
+        "deviceId": deviceId,
+        "threshold": threshold,
+        "unit": "celsius",
+    }
     thresholdsCollection.insert_one(doc)
     return doc
 
@@ -39,16 +43,12 @@ def getThreshold(deviceId: str):
     return thresholdsCollection.find_one({"deviceId": deviceId})
 
 
-def updateThreshold(deviceId: str, threshold: float):
-    updated = thresholdsCollection.find_one_and_update(
-        {"deviceId": deviceId}, {"$set": {"threshold": threshold, "unit": "celsius", "updatedAt": datetime.now(timezone.utc)}}, upsert=True, return_document=True
-    )
-    return updated
+def updateThreshold(deviceId, query: dict):
+    return thresholdsCollection.update_one({"deviceId": deviceId}, {"$set": query}, upsert=True).raw_result
 
 
 # Alerts
-def insertFeverAlert(deviceId: str, temperature: float, threshold: float):
-    doc = {"deviceId": deviceId, "temperature": temperature, "threshold": threshold, "timestamp": datetime.now(timezone.utc), "resolved": False, "resolvedAt": None}
+def insertFeverAlert(doc):
     alertsCollection.insert_one(doc)
     return doc
 
@@ -57,8 +57,8 @@ def getActiveAlert(deviceId: str):
     return alertsCollection.find_one({"deviceId": deviceId, "resolved": False})
 
 
-def resolveAlert(alert_id: ObjectId):
-    alertsCollection.update_one({"_id": alert_id}, {"$set": {"resolved": True, "resolvedAt": datetime.now(timezone.utc)}})
+def resolveAlert(alert_id: ObjectId, query):
+    alertsCollection.update_one({"_id": alert_id}, {"$set": query})
 
 
 def getFeverAlerts(deviceId: str):
