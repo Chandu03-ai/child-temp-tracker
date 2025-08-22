@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { TemperatureReading } from '../types/temperature';
-import { parseBackendTimestamp } from '../utils/dateUtils';
 
 interface MiniGraphProps {
   readings: TemperatureReading[];
@@ -18,22 +17,9 @@ export const MiniGraph: React.FC<MiniGraphProps> = ({ readings, threshold }) => 
   const toUnit = (temp: number) => (unit === 'F' ? toFahrenheit(temp) : temp);
   const unitLabel = unit === 'F' ? '°F' : '°C';
 
-  // Filter readings for selected date with safe timestamp parsing
-  const filteredReadings = readings.filter((r) => {
-    const date = parseBackendTimestamp(r.timestamp);
-    if (!date) {
-      console.warn('Invalid timestamp:', r.timestamp);
-      return false;
-    }
-    
-    try {
-      const dateString = date.toISOString().split('T')[0];
-      return dateString === selectedDate;
-    } catch (error) {
-      console.warn('Error processing timestamp:', r.timestamp, error);
-      return false;
-    }
-  });
+  const filteredReadings = readings.filter((r) =>
+    new Date(r.timestamp).toISOString().startsWith(selectedDate)
+  );
 
   if (filteredReadings.length === 0) {
     return (
@@ -46,15 +32,9 @@ export const MiniGraph: React.FC<MiniGraphProps> = ({ readings, threshold }) => 
     );
   }
 
-  // Sort readings by timestamp with safe parsing
-  const sortedReadings = [...filteredReadings].sort((a, b) => {
-    const dateA = parseBackendTimestamp(a.timestamp);
-    const dateB = parseBackendTimestamp(b.timestamp);
-    
-    if (!dateA || !dateB) return 0;
-    
-    return dateA.getTime() - dateB.getTime();
-  });
+  const sortedReadings = [...filteredReadings].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
 
   const temperatures = sortedReadings.map((r) => toUnit(r.temperature));
   const minTemp = Math.min(...temperatures, toUnit(threshold) - 2);
@@ -83,12 +63,12 @@ export const MiniGraph: React.FC<MiniGraphProps> = ({ readings, threshold }) => 
   // Tooltip show/hide handlers with debounce
   const handleMouseEnter = (data: { x: number; y: number; temp: number; time: string }) => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-    hoverTimeout.current = setTimeout(() => setHoverData(data), 100);
+    hoverTimeout.current = setTimeout(() => setHoverData(data), 100); // slight delay
   };
 
   const handleMouseLeave = () => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-    hoverTimeout.current = setTimeout(() => setHoverData(null), 150);
+    hoverTimeout.current = setTimeout(() => setHoverData(null), 150); // slight delay
   };
 
   return (
@@ -123,7 +103,7 @@ export const MiniGraph: React.FC<MiniGraphProps> = ({ readings, threshold }) => 
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Recent Temperature Graph</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Temperature Trend</h3>
         <div className="flex items-center space-x-2 text-sm">
           {trend === 'up' && <TrendingUp className="w-3 h-3 text-red-500" />}
           {trend === 'down' && <TrendingDown className="w-3 h-3 text-green-500" />}
@@ -170,12 +150,10 @@ export const MiniGraph: React.FC<MiniGraphProps> = ({ readings, threshold }) => 
           {/* Data points */}
           {points.map((point, index) => {
             const temp = temperatures[index];
-            const reading = sortedReadings[index];
-            const date = parseBackendTimestamp(reading.timestamp);
-            const time = date ? date.toLocaleTimeString([], {
+            const time = new Date(sortedReadings[index].timestamp).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
-            }) : 'Invalid time';
+            });
             const isFever = temp >= toUnit(threshold);
 
             return (
