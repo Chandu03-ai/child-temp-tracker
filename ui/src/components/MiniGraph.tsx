@@ -123,7 +123,7 @@ export const MiniGraph: React.FC<MiniGraphProps> = ({ readings, threshold }) => 
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Temperature Trend</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Recent Temperature Graph</h3>
         <div className="flex items-center space-x-2 text-sm">
           {trend === 'up' && <TrendingUp className="w-3 h-3 text-red-500" />}
           {trend === 'down' && <TrendingDown className="w-3 h-3 text-green-500" />}

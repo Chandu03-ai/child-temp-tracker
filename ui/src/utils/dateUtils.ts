@@ -1,96 +1,54 @@
-/**
- * Parse timestamp from backend format to Date object
- * Backend format: "20250822T040135293" (YYYYMMDDTHHMMSSMMM)
- * @param timestamp - The timestamp string from backend
- * @returns Date object or null if invalid
- */
-export const parseBackendTimestamp = (timestamp: string): Date | null => {
-  if (!timestamp || typeof timestamp !== 'string') {
-    return null;
-  }
+// Parse backend numeric timestamp "YYYYMMDDHHMMSSmmm" into JS Date
+const parseBackendTimestamp = (ts: string): Date => {
+  const year = parseInt(ts.slice(0, 4));
+  const month = parseInt(ts.slice(4, 6)) - 1; // JS months 0-indexed
+  const day = parseInt(ts.slice(6, 8));
+  const hour = parseInt(ts.slice(8, 10));
+  const minute = parseInt(ts.slice(10, 12));
+  const second = parseInt(ts.slice(12, 14));
+  const millisecond = parseInt(ts.slice(14, 17)) || 0;
 
-  // Handle ISO format (already valid)
-  if (timestamp.includes('-') || timestamp.includes(':')) {
-    const date = new Date(timestamp);
-    return isNaN(date.getTime()) ? null : date;
-  }
-
-  // Handle backend compact format: "20250822T040135293"
-  if (timestamp.length === 17 && timestamp.includes('T')) {
-    const [datePart, timePart] = timestamp.split('T');
-    
-    if (datePart.length === 8 && timePart.length === 9) {
-      const year = datePart.substring(0, 4);
-      const month = datePart.substring(4, 6);
-      const day = datePart.substring(6, 8);
-      
-      const hour = timePart.substring(0, 2);
-      const minute = timePart.substring(2, 4);
-      const second = timePart.substring(4, 6);
-      const millisecond = timePart.substring(6, 9);
-      
-      // Create ISO format string
-      const isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}.${millisecond}Z`;
-      const date = new Date(isoString);
-      return isNaN(date.getTime()) ? null : date;
-    }
-  }
-
-  // Fallback: try to parse as-is
-  const date = new Date(timestamp);
-  return isNaN(date.getTime()) ? null : date;
+  return new Date(year, month, day, hour, minute, second, millisecond);
 };
 
-/**
- * Safe date formatting that handles invalid dates
- */
-const safeFormatDate = (date: Date | null, formatter: (date: Date) => string, fallback = 'Invalid Date'): string => {
-  if (!date || isNaN(date.getTime())) {
-    return fallback;
-  }
-  return formatter(date);
+// Always show IST for ISO string or backend numeric string
+export const formatDateTime = (time?: string): string => {
+  if (!time) return new Date().toLocaleString("en-IN", { 
+    year: "numeric", month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false, timeZone: "Asia/Kolkata" 
+  });
+
+  const date = /^\d{17}$/.test(time) ? parseBackendTimestamp(time) : new Date(time);
+
+  return date.toLocaleString("en-IN", { 
+    year: "numeric", month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false, timeZone: "Asia/Kolkata"
+  });
 };
 
-export const formatDateTime = (isoString: string): string => {
-  const date = parseBackendTimestamp(isoString);
-  return safeFormatDate(date, (d) => d.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }));
+export const formatTime = (time?: string): string => {
+  const date = !time ? new Date() : (/^\d{17}$/.test(time) ? parseBackendTimestamp(time) : new Date(time));
+
+  return date.toLocaleString("en-IN", { 
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false, timeZone: "Asia/Kolkata"
+  });
 };
 
-export const formatTime = (isoString: string): string => {
-  const date = parseBackendTimestamp(isoString);
-  return safeFormatDate(date, (d) => d.toLocaleString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }));
-};
-
-export const getTimeAgo = (isoString: string): string => {
-  const date = parseBackendTimestamp(isoString);
-  if (!date) {
-    return 'Unknown';
-  }
-  
+// Show time ago in IST
+export const getTimeAgo = (time: string): string => {
+  const date = /^\d{17}$/.test(time) ? parseBackendTimestamp(time) : new Date(time);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffInSeconds < 60) {
-    return `${diffInSeconds}s ago`;
-  } else if (diffInSeconds < 3600) {
-    const minutes = Math.floor(diffInSeconds / 60);
-    return `${minutes}m ago`;
-  } else if (diffInSeconds < 86400) {
-    const hours = Math.floor(diffInSeconds / 3600);
-    return `${hours}h ago`;
-  } else {
-    const days = Math.floor(diffInSeconds / 86400);
-    return `${days}d ago`;
-  }
+  if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  return `${Math.floor(diffInSeconds / 86400)}d ago`;
 };
+
+// Current Indian date & time directly
+export const getCurrentIndiaDateTime = (): string => formatDateTime();
+export const getCurrentIndiaTime = (): string => formatTime();
